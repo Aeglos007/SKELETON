@@ -12,9 +12,11 @@ with open("output.txt", "w") as f:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--host", help="host address")
+    parser.add_argument("-w","--wordlist",help="wordlists")
     args = parser.parse_args()
 
-    target_host = args.host
+    target_host = str(args.host)
+    wordlist= str(args.wordlist)
 
     nm = nmap.PortScanner()
 
@@ -54,29 +56,29 @@ with open("output.txt", "w") as f:
 
                 if port == 80:
                     # Run feroxbuster on the host                    
-                    subprocess.run(["feroxbuster", "--status-codes", "200,401,403,500", "-u", f"http://{host}", "-w", "dict.txt"])
+                    subprocess.run(["dirb", "--status-codes","-u", f"http://{target_host}", "-w",wordlist ])
                     
                     # Run nuclei on the host
-                    subprocess.run(["nuclei", "-u", f"http://{host}:80"])
+                    subprocess.run(["nuclei", "-u", f"http://{target_host}:80"])
                           
                     # Run wapiti on the host
-                    subprocess.run(["wapiti", "-u", f"http://{host}"])
+                    subprocess.run(["wapiti", "-u", f"http://{target_host}"])
                           
                     # Run nikto on the host
-                    subprocess.run(["nikto", "-h", f"http://{host}"])
+                    subprocess.run(["nikto", "-h", f"http://{target_host}"])
                     
                 if port == 443:
                     # Run feroxbuster on the host
-                    subprocess.run(["feroxbuster", "--status-codes", "200,401,403,500", "-u", f"https://{host}:443", "-w", "dict.txt"])
+                    subprocess.run(["dirb", "--status-codes","-u", f"https://{target_host}:443", "-w", wordlist])
                     
                     # Run nuclei on the host
-                    subprocess.run(["nuclei", "-u", f"https://{host}:443"])
+                    subprocess.run(["nuclei", "-u", f"https://{target_host}:443"])
                     
                     # Run wapiti on the host
-                    subprocess.run(["wapiti", "-u", f"https://{host}:443"])
+                    subprocess.run(["wapiti", "-u", f"https://{target_host}:443"])
                           
                     # Run nikto on the host
-                    subprocess.run(["nikto", "-h", f"https://{host}:443"])
+                    subprocess.run(["nikto", "-h", f"https://{target_host}:443"])
 
 
 
@@ -85,4 +87,3 @@ with open("output.txt", "w") as f:
     txt_file.close()
     
     sys.stdout = sys.__stdout__
-    
