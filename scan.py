@@ -3,30 +3,38 @@ import subprocess
 import csv
 import argparse
 import sys
-
+import socket
 
 # Open the file for writing
-with open("output.txt", "w") as f:
-    # Redirect stdout to the file
-    sys.stdout = f
+parser = argparse.ArgumentParser()
+parser.add_argument("-u", "--host", help="host address",required=True)
+parser.add_argument("-w","--wordlist",help="wordlists", required=True)
+args = parser.parse_args()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-u", "--host", help="host address")
-    parser.add_argument("-w","--wordlist",help="wordlists")
-    args = parser.parse_args()
+target_host = args.host
+ip_adress = socket.gethostbyname(target_host)
+wordlist= args.wordlist
 
-    target_host = str(args.host)
-    wordlist= str(args.wordlist)
-
-    nm = nmap.PortScanner()
+nm = nmap.PortScanner()
 
     # Scan localhost for ports 80,443
-    result = nm.scan(target_host,'80,443')
+result = nm.scan(ip_adress,'80,443')
 
     #print("Hosts: ", target_host)
 
     # Get all hostnames for the host
-    hosts = nm.all_hosts()
+hosts = nm.all_hosts()
+
+print("\n****************************************************************\n****************************************************************")
+
+for host in hosts:
+    print('Host : %s (%s)' % (host, nm[host].hostname()))
+    print('State : %s' % nm[host].state())
+        
+        
+with open("output.txt", "w") as f:
+    # Redirect stdout to the file
+    sys.stdout = f
 
     # Create output files
     csv_file = open('scan_results.csv', 'w', newline='')
@@ -37,6 +45,7 @@ with open("output.txt", "w") as f:
 
     # Write header row to CSV
     csv_writer.writerow(['Host', 'Port', 'Protocol', 'State'])
+    
 
     # Print open ports
     for host in hosts:
@@ -56,7 +65,7 @@ with open("output.txt", "w") as f:
 
                 if port == 80:
                     # Run feroxbuster on the host                    
-                    subprocess.run(["dirb", "--status-codes","-u", f"http://{target_host}", "-w",wordlist ])
+                    subprocess.run(["feroxbuster", "-u", f"http://{ip_adress}", "-w",wordlist ])
                     
                     # Run nuclei on the host
                     subprocess.run(["nuclei", "-u", f"http://{target_host}:80"])
@@ -69,7 +78,7 @@ with open("output.txt", "w") as f:
                     
                 if port == 443:
                     # Run feroxbuster on the host
-                    subprocess.run(["dirb", "--status-codes","-u", f"https://{target_host}:443", "-w", wordlist])
+                    subprocess.run(["feroxbuster","-u", f"https://{ip_adress}:443", "-w", wordlist])
                     
                     # Run nuclei on the host
                     subprocess.run(["nuclei", "-u", f"https://{target_host}:443"])
@@ -87,3 +96,4 @@ with open("output.txt", "w") as f:
     txt_file.close()
     
     sys.stdout = sys.__stdout__
+
